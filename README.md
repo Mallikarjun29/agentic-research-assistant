@@ -2,6 +2,9 @@
 
 Run Jan-v1 locally as a Streamlit application that automates deep research workflows without relying on third-party APIs. The stack pulls `janhq/Jan-v1-4B` weights from Hugging Face, generates its own scout notes, and synthesizes polished business-ready reports that you can export or iterate on entirely offline.
 
+<img width="1918" height="951" alt="image" src="https://github.com/user-attachments/assets/5b1b2305-a7bc-4d8e-9a14-73a03753d1db" />
+
+
 ## Feature Highlights
 - **Offline-first pipeline** – once the Hugging Face weights are cached, the assistant drafts queries, scout briefs, and final reports without touching the public internet.
 - **Agentic reasoning** – Jan-v1 (Lucy + Qwen3-4B-thinking) drives query planning, intermediate note-taking, and sectioned report writing using enforced `<final>...</final>` scaffolding.
