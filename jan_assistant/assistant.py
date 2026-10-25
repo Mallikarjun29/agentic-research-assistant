@@ -213,6 +213,7 @@ Summary: <single paragraph insight>
             )
             summary = ""
             title = ""
+            source_label = "web-snippets"
             if self.model is not None:
                 scout_prompt = f"""
 You are a research scout supporting an agentic analyst.
@@ -235,6 +236,8 @@ Summary: <single paragraph insight>
                 title, summary = self._split_memo(memo)
                 if summary.lower().startswith("model not loaded"):
                     summary = ""
+                elif summary:
+                    source_label = "web+jan-v1-local"
             if not summary:
                 # Model unavailable or unhelpful: keep the raw retrieved snippets.
                 summary = " ".join(
@@ -242,10 +245,10 @@ Summary: <single paragraph insight>
                 ).strip()
             sources.append(
                 {
-                    "title": title or f"Web brief {idx + 1}: {query}",
+                    "title": title or f"Web results {idx + 1}: {query}",
                     "url": hits[0]["url"],
                     "snippet": summary,
-                    "source": "web+jan-v1-local",
+                    "source": source_label,
                     "references": hits,
                 }
             )
