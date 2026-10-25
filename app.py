@@ -94,12 +94,12 @@ def main() -> None:
         elif not topic.strip():
             st.error("Please enter a research topic.")
         else:
-            run_pipeline(topic, depth, focus, timeframe, report_format)
+            run_pipeline(topic, depth, focus, timeframe, report_format, use_web)
     if st.session_state.results:
         display_results(st.session_state.results)
 
 
-def run_pipeline(topic: str, depth: str, focus: str, timeframe: str, report_format: str) -> None:
+def run_pipeline(topic: str, depth: str, focus: str, timeframe: str, report_format: str, use_web: bool) -> None:
     assistant: DeepResearchAssistant = st.session_state.assistant
     bar = st.progress(0)
     status = st.empty()
@@ -205,7 +205,7 @@ def display_results(results: dict) -> None:
     with col_c:
         if st.button("Start New Research"):
             st.session_state.results = None
-            st.experimental_rerun()
+            st.rerun()
 
 
 if __name__ == "__main__":
