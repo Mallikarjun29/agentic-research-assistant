@@ -17,6 +17,11 @@ class ResearchConfig:
     context_length: int = 4096
     device_map: str = "auto"
     torch_dtype: str = "float16"
+    # Web retrieval (free DuckDuckGo search, no API key or account).
+    use_web_search: bool = True
+    web_results_per_query: int = 3
+    web_max_queries: int = 10
+    web_timeout: float = 15.0
 
 
 __all__ = ["ResearchConfig"]

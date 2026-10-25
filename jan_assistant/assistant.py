@@ -109,9 +109,11 @@ class DeepResearchAssistant:
         for idx, result in enumerate(research_notes[:20]):
             title = result.get("title", "Untitled")
             snippet = result.get("snippet", "")
-            context_lines.append(
-                f"Source {idx + 1} Title: {title}\nSource {idx + 1} Summary: {snippet}"
-            )
+            url = result.get("url", "")
+            lines = f"Source {idx + 1} Title: {title}\nSource {idx + 1} Summary: {snippet}"
+            if url:
+                lines += f"\nSource {idx + 1} URL: {url}"
+            context_lines.append(lines)
         context = "\n".join(context_lines) or "Insufficient scout notes; reason over topic directly."
         sections = sections_for_format(report_format)
         sections_text = "\n".join(sections)
@@ -175,6 +177,76 @@ Summary: <single paragraph insight>
                     "url": "",
                     "snippet": summary,
                     "source": "jan-v1-local",
+                }
+            )
+        return sources
+
+    def build_web_sources(
+        self,
+        topic: str,
+        queries: List[str],
+        focus_area: str,
+        timeframe: str,
+    ) -> List[Dict]:
+        """Retrieve real web results per query, then ground each brief in them.
+
+        Returns an empty list when web search is unavailable so callers can
+        fall back to model-only notes. Each brief keeps its retrieved
+        references so the UI/JSON exports carry real URLs.
+        """
+
+        from .websearch import search_web
+
+        sources: List[Dict] = []
+        searched = queries[: self.config.web_max_queries]
+        for idx, query in enumerate(searched):
+            hits = search_web(
+                query,
+                max_results=self.config.web_results_per_query,
+                timeframe=timeframe,
+                timeout=self.config.web_timeout,
+            )
+            if not hits:
+                continue
+            evidence = "\n".join(
+                f"- {hit['title']} ({hit['url']}): {hit['snippet']}" for hit in hits
+            )
+            summary = ""
+            title = ""
+            if self.model is not None:
+                scout_prompt = f"""
+You are a research scout supporting an agentic analyst.
+Topic: {topic}
+Focus area: {focus_area}
+Timeframe: {timeframe}
+Sub-question: {query}
+Retrieved web evidence:
+{evidence}
+Task: Write a brief that is grounded strictly in the retrieved evidence above.
+Constraints:
+- Use 3-4 full sentences (no bullets).
+- Do not introduce facts, figures, or sources that are not in the evidence.
+- If the evidence is thin or off-topic, say so instead of filling gaps.
+Respond using the template below:
+Title: <concise insight headline>
+Summary: <single paragraph insight>
+"""
+                memo = self.generate_response(scout_prompt, max_tokens=350)
+                title, summary = self._split_memo(memo)
+                if summary.lower().startswith("model not loaded"):
+                    summary = ""
+            if not summary:
+                # Model unavailable or unhelpful: keep the raw retrieved snippets.
+                summary = " ".join(
+                    hit["snippet"] for hit in hits if hit["snippet"]
+                ).strip()
+            sources.append(
+                {
+                    "title": title or f"Web brief {idx + 1}: {query}",
+                    "url": hits[0]["url"],
+                    "snippet": summary,
+                    "source": "web+jan-v1-local",
+                    "references": hits,
                 }
             )
         return sources

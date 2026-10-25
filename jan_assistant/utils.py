@@ -78,7 +78,7 @@ def extract_final_block(text: str) -> str:
     cleaned = re.sub(r"[#`*_]{1,3}", "", cleaned)
     first_pos = -1
     for header in sorted(STANDARD_SECTIONS, key=len, reverse=True):
-        match = re.search(r"\\b" + re.escape(header) + r"\\b", cleaned, flags=re.IGNORECASE)
+        match = re.search(r"\b" + re.escape(header) + r"\b", cleaned, flags=re.IGNORECASE)
         if match and (first_pos == -1 or match.start() < first_pos):
             first_pos = match.start()
     if first_pos >= 0:

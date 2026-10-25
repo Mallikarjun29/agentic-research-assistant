@@ -79,6 +79,12 @@ def main() -> None:
                 "presentation": "Presentation Format",
             }[opt],
         )
+    use_web = st.checkbox(
+        "Search the web for evidence (free DuckDuckGo search, no API key)",
+        value=True,
+        help="Scout briefs are grounded in real retrieved pages. "
+        "Uncheck to use model-only notes.",
+    )
     if st.button("Start Deep Research", use_container_width=True):
         if not st.session_state.model_loaded:
             st.error(
@@ -101,8 +107,16 @@ def run_pipeline(topic: str, depth: str, focus: str, timeframe: str, report_form
         status.text("Generating research queries...")
         queries = assistant.generate_search_queries(topic, focus, depth)
         bar.progress(20)
-        status.text("Drafting scout briefs with Jan-v1...")
-        sources = assistant.build_internal_sources(topic, queries, focus, timeframe)
+        retrieval = "model-only"
+        sources = []
+        if use_web and assistant.config.use_web_search:
+            status.text("Searching the web and drafting grounded briefs...")
+            sources = assistant.build_web_sources(topic, queries, focus, timeframe)
+            if sources:
+                retrieval = "web"
+        if not sources:
+            status.text("Web search unavailable; drafting model-only briefs with Jan-v1...")
+            sources = assistant.build_internal_sources(topic, queries, focus, timeframe)
         bar.progress(65)
         status.text("Synthesizing report...")
         report = assistant.synthesize_research(topic, sources, focus, report_format)
@@ -117,6 +131,7 @@ def run_pipeline(topic: str, depth: str, focus: str, timeframe: str, report_form
                 "focus": focus,
                 "timeframe": timeframe,
                 "format": report_format,
+                "retrieval": retrieval,
             },
             "timestamp": datetime.now().isoformat(),
         }
